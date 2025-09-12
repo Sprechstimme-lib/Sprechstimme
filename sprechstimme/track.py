@@ -1,5 +1,6 @@
 import numpy as np
-from .core import play, midi_to_freq
+
+from .core import play, midi_to_freq, note_to_freq
 from .playback import play_array, save_wav
 
 class Track:
@@ -25,7 +26,8 @@ class Track:
             t = np.linspace(0, sec, int(self.sample_rate * sec), endpoint=False)
             synth_data = np.zeros_like(t)
             for n in notes:
-                freq = midi_to_freq(n) if isinstance(n, (int, float)) else n
+
+                freq = midi_to_freq(n) if isinstance(n, (int, float)) else note_to_freq(n)
                 synth_data += _SYNTHS[synth]["wavetype"](t, freq=freq)
             buffers.append(synth_data)
 
