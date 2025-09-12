@@ -1,2 +1,2 @@
 # Sprechstimme
-Synthesiser creation python library
+Synthesizer creation python library
