@@ -1,13 +1,10 @@
 import numpy as np
 from . import waves, playback
 
-
 _SYNTHS = {}
-
 
 def new(name):
     _SYNTHS[name] = {"wavetype": waves.sine, "filters": []}
-
 
 def create(name, wavetype=waves.sine, filters=None):
     """
@@ -29,7 +26,6 @@ def create(name, wavetype=waves.sine, filters=None):
                 _SYNTHS[name]["filters"].append(getattr(_filters, f, None))
             else:
                 _SYNTHS[name]["filters"].append(f)
-
 
 def play(name, notes, duration=0.5, sample_rate=44100):
     """Play notes (list of MIDI note numbers or Hz) on synth."""
