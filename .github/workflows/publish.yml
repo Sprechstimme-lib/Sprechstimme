@@ -1,15 +1,19 @@
-name: Publish to PyPI
+name: Build and Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  id-token: write      # Required for OIDC
+  contents: read       # Allows actions/checkout
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # <-- Required for OIDC
-      contents: read   # <-- Needed to checkout code
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,15 +21,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Install build tools
-        run: pip install build
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
 
-      - name: Build package (using pyproject.toml)
+      - name: Build package
         run: python -m build
 
-      - name: Publish to PyPI (Trusted Publisher)
+      - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          skip-existing: true
