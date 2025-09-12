@@ -12,5 +12,5 @@ def sawtooth(t, freq=440, amp=1.0):
 def triangle(t, freq=440, amp=1.0):
     return amp * (2 * np.abs(2 * (t * freq - np.floor(t * freq + 0.5))) - 1)
 
-def noise(t, amp=1.0):
-    return amp * np.random.uniform(-1, 1, size=t.shape)
+def noise(t, freq=0, amp=1.0):
+    return amp * np.random.uniform(-1.0, 1.0, size=t.shape)

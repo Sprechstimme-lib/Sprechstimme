@@ -1,34 +1,164 @@
 import numpy as np
-from . import waves, playback
+from functools import partial
+from . import waves as waves_module
+from . import filters as filters_module
+from . import playback
 
+# internal synth registry
 _SYNTHS = {}
 
-def new(name):
-    _SYNTHS[name] = {"wavetype": waves.sine, "filters": []}
+# Default sample rate
+DEFAULT_SR = 44100
 
-def create(name, wavetype=waves.sine, filters=None):
+def new(name):
+    """Register a new synth with defaults (sine, no filters)."""
+    _SYNTHS[name] = {
+        "wavetype": waves_module.sine,
+        "filters": [],
+        "envelope": None,
+        "poly": True
+    }
+
+def _resolve_wave(wavetype):
+    """Allow wavetype to be function or string preset name."""
+    if isinstance(wavetype, str):
+        return getattr(waves_module, wavetype, None) or waves_module.sine
+    if callable(wavetype):
+        return wavetype
+    raise ValueError("wavetype must be a function or preset string")
+
+def _resolve_filter(filt):
     """
-    wavetype: function(t, freq, amp) or string (preset)
-    filters: list of functions or strings (presets)
+    Accept:
+     - callable filter(signal, sample_rate, **kwargs)
+     - string name -> lookup in filters_module
+     - functools.partial to carry parameters
+    Return a callable f(signal, sample_rate) -> signal
+    """
+    if filt is None:
+        return None
+    if isinstance(filt, str):
+        f = getattr(filters_module, filt, None)
+        if f is None:
+            raise ValueError(f"Unknown filter preset '{filt}'")
+        return f
+    if callable(filt):
+        return filt
+    raise ValueError("Filter must be callable, string preset, or partial")
+
+def create(name, wavetype=None, filters=None, envelope=None, poly=True):
+    """
+    Configure synth 'name'.
+    wavetype: function(t, freq=440, amp=1.0) or string preset
+    filters: list of callables / preset names / partials
+    envelope: dict or None, e.g. {"attack":0.01,"decay":0.05,"sustain":0.8,"release":0.1}
+    poly: allow polyphony (True) or single voice (False)
     """
     if name not in _SYNTHS:
-        raise ValueError(f"Synth '{name}' does not exist. Call sprechstimme.new() first.")
-    # Allow string for preset wave
-    if isinstance(wavetype, str):
-        wavetype = getattr(waves, wavetype, waves.sine)
-    _SYNTHS[name]["wavetype"] = wavetype
-    # Allow filter presets by string
-    from . import filters as _filters
-    _SYNTHS[name]["filters"] = []
+        raise ValueError(f"Synth '{name}' does not exist. Call new() first.")
+    if wavetype is not None:
+        _SYNTHS[name]["wavetype"] = _resolve_wave(wavetype)
+    # resolve filters
+    resolved = []
     if filters:
         for f in filters:
-            if isinstance(f, str):
-                _SYNTHS[name]["filters"].append(getattr(_filters, f, None))
-            else:
-                _SYNTHS[name]["filters"].append(f)
+            # Allow passing partials; partial is callable so _resolve_filter handles it.
+            resolved.append(_resolve_filter(f))
+    _SYNTHS[name]["filters"] = [r for r in resolved if r is not None]
+    # envelope
+    _SYNTHS[name]["envelope"] = envelope
+    _SYNTHS[name]["poly"] = bool(poly)
 
-def play(name, notes, duration=0.5, sample_rate=44100):
-    """Play notes (list of MIDI note numbers or Hz) on synth."""
+def get(name):
+    """Return synth configuration summary."""
+    synth = _SYNTHS.get(name)
+    if not synth:
+        raise ValueError(f"Synth '{name}' not found")
+    def _name(obj):
+        if obj is None:
+            return None
+        if hasattr(obj, "__name__"):
+            return obj.__name__
+        return str(obj)
+    return {
+        "wavetype": _name(synth["wavetype"]),
+        "filters": [_name(f) for f in synth["filters"]],
+        "envelope": synth["envelope"],
+        "polyphony": synth["poly"]
+    }
+
+def midi_to_freq(midi_note):
+    return 440.0 * (2.0 ** ((midi_note - 69) / 12.0))
+
+def note_to_freq(note):
+    # Accept "C4", "A#3", or "Bb3" (supports b for flat)
+    NOTE_MAP = {
+        "C": 0, "C#": 1, "DB": 1, "D": 2, "D#": 3, "EB": 3, "E": 4, "F": 5,
+        "F#": 6, "GB": 6, "G": 7, "G#": 8, "AB": 8, "A": 9, "A#": 10, "BB": 10, "B": 11
+    }
+    note = note.strip().upper()
+    # handle multi-char note name
+    if len(note) < 2:
+        raise ValueError("note must be like 'C4' or 'A#3'")
+    # last character(s) are octave digits (allow negative octave e.g. C-1)
+    # find where digits start
+    i = len(note) - 1
+    while i >= 0 and (note[i].isdigit() or note[i] == "-"):
+        i -= 1
+    name = note[:i+1]
+    octave = int(note[i+1:])
+    if name not in NOTE_MAP:
+        raise ValueError(f"Unknown note name '{name}'")
+    midi = NOTE_MAP[name] + (octave + 1) * 12
+    return midi_to_freq(midi)
+
+def _apply_envelope(signal, sample_rate, env):
+    """Simple ADSR envelope applied per-sample."""
+    if not env:
+        return signal
+    a = float(env.get("attack", 0.01))
+    d = float(env.get("decay", 0.05))
+    s = float(env.get("sustain", 0.8))
+    r = float(env.get("release", 0.05))
+    total_len = len(signal)
+    sr = sample_rate
+    attack_samples = int(a * sr)
+    decay_samples = int(d * sr)
+    release_samples = int(r * sr)
+    sustain_samples = max(0, total_len - (attack_samples + decay_samples + release_samples))
+    # build envelope
+    env_curve = np.zeros(total_len, dtype=float)
+    idx = 0
+    # attack
+    if attack_samples > 0:
+        env_curve[idx:idx+attack_samples] = np.linspace(0.0, 1.0, attack_samples, endpoint=False)
+        idx += attack_samples
+    # decay
+    if decay_samples > 0:
+        env_curve[idx:idx+decay_samples] = np.linspace(1.0, s, decay_samples, endpoint=False)
+        idx += decay_samples
+    # sustain
+    if sustain_samples > 0:
+        env_curve[idx:idx+sustain_samples] = s
+        idx += sustain_samples
+    # release
+    if release_samples > 0:
+        env_curve[idx:idx+release_samples] = np.linspace(s, 0.0, release_samples, endpoint=False)
+        idx += release_samples
+    # if idx < total_len fill remainder with 0
+    env_curve[idx:] = 0.0
+    return signal * env_curve
+
+def play(name, notes, duration=0.5, sample_rate=DEFAULT_SR):
+    """
+    Play notes on synth `name`.
+    notes may be:
+      - single int (MIDI) or float (Hz) or str ("C4")
+      - list of notes to be treated as a chord (played together)
+      - list of tuples for sequences: [(60,0.5),(64,0.5)]
+    duration is seconds for each grouped event unless provided per-note in tuple form.
+    """
+    # Normalize notes into a list
     if isinstance(notes, (int, float, str)):
         notes = [notes]
 
@@ -36,49 +166,57 @@ def play(name, notes, duration=0.5, sample_rate=44100):
     if synth is None:
         raise ValueError(f"Synth '{name}' not found")
 
-    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
-    signal = np.zeros_like(t)
+    # If user passed sequence of (note, dur) tuples, handle separately:
+    # detect tuple-like: first element is tuple/list of length 2 with number/str
+    if len(notes) > 0 and isinstance(notes[0], (list, tuple)) and len(notes[0]) == 2:
+        # treat as sequence of (note, dur)
+        segments = []
+        for n, dur in notes:
+            segments.append(( [n], dur))
+    else:
+        # Single chord or list-of-notes for same duration
+        segments = [ (notes, duration) ]
 
-    for n in notes:
-        freq = midi_to_freq(n) if isinstance(n, (int, float)) else note_to_freq(n)
-        wave = synth["wavetype"](t, freq=freq)
-        # Apply filters
-        for f in synth["filters"]:
+    out = np.array([], dtype=float)
+    for seg_notes, seg_dur in segments:
+        sec = float(seg_dur)
+        t = np.linspace(0, sec, int(sample_rate * sec), endpoint=False)
+        signal = np.zeros_like(t)
+
+        for n in seg_notes:
+            # Determine frequency
+            if isinstance(n, int):
+                freq = midi_to_freq(n)
+            elif isinstance(n, float):
+                # float treated as frequency in Hz
+                freq = float(n)
+            elif isinstance(n, str):
+                freq = note_to_freq(n)
+            else:
+                raise ValueError(f"Unsupported note type: {type(n)} -> {n}")
+
+            wave = synth["wavetype"](t, freq=freq, amp=1.0)
+            signal += wave
+
+        # normalize chord by number of notes to avoid clipping
+        if len(seg_notes) > 0:
+            signal = signal / float(len(seg_notes))
+
+        # apply envelope if configured
+        if synth.get("envelope"):
+            signal = _apply_envelope(signal, sample_rate, synth["envelope"])
+
+        # apply filters in order
+        for f in synth.get("filters", []):
             if f:
-                wave = f(wave, sample_rate)
-        signal += wave
+                # filters expected to be f(signal, sample_rate)
+                signal = f(signal, sample_rate)
 
-    # normalize
-    signal /= len(notes)
-    playback.play_array(signal, sample_rate)
+        out = np.concatenate([out, signal])
 
-def get(name):
-    """Return info about synth: wave and filters."""
-    synth = _SYNTHS.get(name)
-    if not synth:
-        raise ValueError(f"Synth '{name}' not found")
-    wave = synth["wavetype"]
-    filters = synth["filters"]
-    def _func_name(f):
-        if hasattr(f, "__name__"):
-            return f.__name__
-        return str(f)
-    return {
-        "wave": _func_name(wave),
-        "filters": [_func_name(f) for f in filters if f]
-    }
+    # final normalization to avoid clipping in playback
+    max_abs = np.max(np.abs(out)) if out.size else 0.0
+    if max_abs > 1e-9:
+        out = out / max(1.0, max_abs)
 
-def midi_to_freq(midi_note):
-    return 440.0 * (2.0 ** ((midi_note - 69) / 12.0))
-
-NOTE_MAP = {
-    "C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5,
-    "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11
-}
-
-def note_to_freq(note):
-    # Example: "C4" -> 261.63 Hz
-    name = note[:-1]
-    octave = int(note[-1])
-    midi = NOTE_MAP[name.upper()] + (octave + 1) * 12
-    return midi_to_freq(midi)
+    playback.play_array(out, sample_rate)
