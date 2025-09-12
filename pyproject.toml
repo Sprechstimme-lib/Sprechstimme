@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sprechstimme"
+version = "0.1.0"
+description = "A modular Python synthesizer and sequencer"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+  { name="Baptiste Rech", email="31.lay-season@icloud.com" }
+]
+dependencies = [
+  "numpy",
+  "sounddevice",
+  "scipy"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/breatn/sprechstimme"
