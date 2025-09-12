@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-  { name="Baptiste Rech", email="31.lay-season@icloud.com" }
+  { name="liquidsound" }
 ]
 dependencies = [
   "numpy",
