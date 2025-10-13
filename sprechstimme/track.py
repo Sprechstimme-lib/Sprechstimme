@@ -15,6 +15,31 @@ class Track:
         """
         self.events.append((synth, notes, duration))
 
+    def addChord(self, synth, chord, duration=1):
+
+        NOTE_BASES = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8,
+            'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+
+        def chord_to_notes(chord_name):
+            m = re.match(r'^([A-G][b#]?)(m?)(\d+)$', chord_name)
+            if not m:
+                raise ValueError(f"Invalid chord name: {chord_name}")
+            root, minor, octave = m.groups()
+            octave = int(octave)
+            root_midi = 12 + NOTE_BASES[root] + 12 * octave
+            if minor:
+                intervals = [0, 3, 7]  # minor triad
+            else:
+                intervals = [0, 4, 7]  # major triad
+            return [root_midi + i for i in intervals]
+
+        notes = chord_to_notes(chord)
+
+        self.events.append((synth, notes, duration))
+    
     def _render_event(self, synth_name, notes, sec):
         sr = self.sample_rate
         t = np.linspace(0, sec, int(sr * sec), endpoint=False)
