@@ -1,4 +1,5 @@
 import numpy as np
+import re
 from .core import midi_to_freq, note_to_freq, _SYNTHS, DEFAULT_SR
 from .playback import save_wav
 
