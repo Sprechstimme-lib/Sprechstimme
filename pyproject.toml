@@ -8,9 +8,9 @@ version = "0.1.0"
 description = "A modular Python synthesizer and sequencer"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = { text = "Apache-2.0" }
 authors = [
-  { name="liquidsound" }
+  { name = "liquidsound" }
 ]
 dependencies = [
   "numpy",
@@ -19,4 +19,4 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/breatn/sprechstimme"
+Homepage = "https://github.com/breatn/sprechstimme"
