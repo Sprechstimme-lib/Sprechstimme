@@ -1,6 +1,6 @@
 import numpy as np
 import re
-from .core import midi_to_freq, note_to_freq, _SYNTHS, DEFAULT_SR
+from .core import midi_to_freq, note_to_freq, chord_to_notes, _SYNTHS, DEFAULT_SR
 from .playback import save_wav
 
 class Track:
@@ -17,25 +17,6 @@ class Track:
         self.events.append((synth, notes, duration))
 
     def addChord(self, synth, chord, duration=1):
-
-        NOTE_BASES = {
-            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8,
-            'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-        }
-
-        def chord_to_notes(chord_name):
-            m = re.match(r'^([A-G][b#]?)(m?)(\d+)$', chord_name)
-            if not m:
-                raise ValueError(f"Invalid chord name: {chord_name}")
-            root, minor, octave = m.groups()
-            octave = int(octave)
-            root_midi = 12 + NOTE_BASES[root] + 12 * octave
-            if minor:
-                intervals = [0, 3, 7]  # minor triad
-            else:
-                intervals = [0, 4, 7]  # major triad
-            return [root_midi + i for i in intervals]
 
         notes = chord_to_notes(chord)
 
