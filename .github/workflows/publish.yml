@@ -14,7 +14,6 @@ permissions:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,17 +26,157 @@ jobs:
       - name: Upgrade pip and install build tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build twine
+          python -m pip install build twine wheel setuptools
 
-      - name: Build sdist and wheel
-        run: python -m build --sdist --wheel
-
-
-      - name: Check wheel metadata
+      # ========== DEBUGGING SECTION START ==========
+      
+      - name: Debug - Show repository structure
         run: |
-          echo "Inspecting METADATA inside the wheel:"
-          unzip -p dist/sprechstimme-*-py3-none-any.whl '*/METADATA' | head -20 || true
+          echo "=== Repository root contents ==="
+          ls -la
+          echo ""
+          echo "=== All Python files in repo ==="
+          find . -name "*.py" -type f
+          echo ""
 
+      - name: Debug - Check package directory
+        run: |
+          echo "=== Checking sprechstimme directory ==="
+          if [ -d "sprechstimme" ]; then
+            echo "✓ sprechstimme directory exists"
+            ls -la sprechstimme/
+          else
+            echo "✗ ERROR: sprechstimme directory NOT found!"
+            exit 1
+          fi
+          echo ""
+
+      - name: Debug - Check __init__.py
+        run: |
+          echo "=== Checking for __init__.py ==="
+          if [ -f "sprechstimme/__init__.py" ]; then
+            echo "✓ __init__.py exists"
+            echo "Content:"
+            cat sprechstimme/__init__.py
+          else
+            echo "✗ WARNING: __init__.py NOT found!"
+            echo "Creating empty __init__.py..."
+            touch sprechstimme/__init__.py
+          fi
+          echo ""
+
+      - name: Debug - Validate pyproject.toml
+        run: |
+          echo "=== pyproject.toml content ==="
+          cat pyproject.toml
+          echo ""
+          echo "=== Validating pyproject.toml syntax ==="
+          python -c "import tomllib; f=open('pyproject.toml','rb'); tomllib.load(f); print('✓ Valid TOML syntax')" 2>&1 || \
+          python -c "import tomli; f=open('pyproject.toml','rb'); tomli.load(f); print('✓ Valid TOML syntax')" 2>&1 || \
+          python -c "import toml; toml.load('pyproject.toml'); print('✓ Valid TOML syntax')" 2>&1 || \
+          echo "Could not validate TOML (parser not available, but build will try anyway)"
+          echo ""
+
+      - name: Debug - Check README
+        run: |
+          echo "=== Checking README.md ==="
+          if [ -f "README.md" ]; then
+            echo "✓ README.md exists"
+            echo "Size: $(wc -c < README.md) bytes"
+          else
+            echo "✗ WARNING: README.md NOT found!"
+          fi
+          echo ""
+
+      - name: Debug - Test setuptools package discovery
+        run: |
+          echo "=== Testing setuptools package discovery ==="
+          python -c "
+          from setuptools import find_packages
+          packages = find_packages(where='.')
+          print(f'Found packages: {packages}')
+          if 'sprechstimme' in packages:
+              print('✓ sprechstimme package discovered')
+          else:
+              print('✗ ERROR: sprechstimme package NOT discovered!')
+          "
+          echo ""
+
+      # ========== BUILD SECTION ==========
+
+      - name: Build sdist and wheel (verbose)
+        run: |
+          echo "=== Building distribution packages ==="
+          python -m build --sdist --wheel --verbose
+          echo ""
+          echo "✓ Build completed"
+
+      - name: Debug - List built distributions
+        run: |
+          echo "=== Contents of dist/ directory ==="
+          ls -lh dist/
+          echo ""
+          echo "=== File details ==="
+          for file in dist/*; do
+            echo "File: $file"
+            echo "Size: $(du -h "$file" | cut -f1)"
+            echo ""
+          done
+
+      - name: Debug - Inspect wheel contents
+        run: |
+          echo "=== Listing all files inside wheel ==="
+          unzip -l dist/sprechstimme-*-py3-none-any.whl
+          echo ""
+
+      - name: Debug - Extract and check METADATA
+        run: |
+          echo "=== Extracting METADATA from wheel ==="
+          unzip -p dist/sprechstimme-*-py3-none-any.whl '*/METADATA' > /tmp/metadata.txt || {
+            echo "✗ ERROR: Could not extract METADATA from wheel!"
+            exit 1
+          }
+          echo ""
+          echo "=== Full METADATA content ==="
+          cat /tmp/metadata.txt
+          echo ""
+          echo "=== Checking for required fields ==="
+          if grep -q "^Name:" /tmp/metadata.txt; then
+            echo "✓ Name field found: $(grep '^Name:' /tmp/metadata.txt)"
+          else
+            echo "✗ ERROR: Name field MISSING!"
+          fi
+          if grep -q "^Version:" /tmp/metadata.txt; then
+            echo "✓ Version field found: $(grep '^Version:' /tmp/metadata.txt)"
+          else
+            echo "✗ ERROR: Version field MISSING!"
+          fi
+          echo ""
+
+      - name: Debug - Validate with twine check
+        run: |
+          echo "=== Running twine check ==="
+          python -m twine check dist/* --strict
+          echo ""
+          echo "✓ Twine check passed"
+
+      - name: Debug - Show package metadata
+        run: |
+          echo "=== Inspecting package with pkginfo ==="
+          python -m pip install pkginfo
+          python -c "
+          from pkginfo import Wheel
+          import glob
+          wheel_file = glob.glob('dist/*.whl')[0]
+          w = Wheel(wheel_file)
+          print(f'Name: {w.name}')
+          print(f'Version: {w.version}')
+          print(f'Summary: {w.summary}')
+          print(f'Author: {w.author}')
+          " || echo "Could not inspect with pkginfo"
+          echo ""
+
+      # ========== PUBLISH SECTION ==========
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.10.0
@@ -45,3 +184,4 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
           skip-existing: true
+          verbose: true
