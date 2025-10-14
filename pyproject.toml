@@ -20,3 +20,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/breatn/sprechstimme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sprechstimme*"]
