@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -21,6 +21,5 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/breatn/sprechstimme"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sprechstimme*"]
+[tool.setuptools]
+packages = ["sprechstimme"]
