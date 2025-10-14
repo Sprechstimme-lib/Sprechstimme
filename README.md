@@ -18,6 +18,8 @@ Sprechstimme is a lightweight, flexible Python library for audio synthesis and m
 - **Flexible Note Input**: Support for MIDI numbers, frequencies (Hz), and note names (e.g., "C4", "A#3")
 - **Chord Support**: Built-in chord notation for major and minor triads
 - **Track Sequencing**: Create multi-note sequences with BPM-based timing
+- **Multi-Track Songs**: Compose with multiple tracks playing simultaneously, with precise beat positioning (e.g., beat 200.5)
+- **Universal Beat Counter**: Place events at any beat position across the entire song
 - **Real-time Playback**: Instant audio playback via sounddevice
 - **WAV Export**: Save your compositions to standard WAV files
 
@@ -108,6 +110,46 @@ track.play()
 
 # Export to WAV file
 track.export("my_composition.wav")
+```
+
+### Multi-Track Composition with Song
+
+The `Song` class enables multiple tracks to play simultaneously with precise beat positioning:
+
+```python
+import sprechstimme as sp
+from functools import partial
+
+# Create synthesizers
+sp.new("bass")
+sp.create("bass", wavetype=sp.waves.sawtooth,
+    filters=[partial(sp.filters.low_pass, cutoff=200)])
+
+sp.new("lead")
+sp.create("lead", wavetype=sp.waves.square)
+
+# Create a song at 120 BPM
+song = sp.Song(bpm=120)
+
+# Add bass notes at specific beat positions
+song.add("bass_track", "bass", "C2", beat_position=0, duration=2)
+song.add("bass_track", "bass", "G1", beat_position=2, duration=2)
+
+# Add melody starting at beat 1, with half-beat precision
+song.add("melody", "lead", "C4", beat_position=1, duration=0.5)
+song.add("melody", "lead", "E4", beat_position=1.5, duration=0.5)
+song.add("melody", "lead", "G4", beat_position=2, duration=1)
+
+# Add chords at specific positions
+song.add_chord("chords", "lead", "C4", beat_position=0, duration=4)
+
+# Play or export
+song.play()
+song.export("my_song.wav")
+
+# Get song information
+print(song.get_duration())  # {'beats': 4, 'seconds': 2.0, 'formatted': '0:02.00'}
+print(song.list_tracks())   # Track info with event counts
 ```
 
 ### Advanced: Chord Notation
@@ -214,6 +256,60 @@ Export track to a WAV file.
 
 **Parameters:**
 - `filename` (str): Output filename (default: "output.wav")
+
+### Song Class
+
+#### `Song(bpm=120, sample_rate=44100)`
+Create a new multi-track song with universal beat counter.
+
+**Parameters:**
+- `bpm` (int): Beats per minute for the entire song (default: 120)
+- `sample_rate` (int): Sample rate in Hz (default: 44100)
+
+#### `Song.add_track(track_name)`
+Create a new track in the song.
+
+**Parameters:**
+- `track_name` (str): Unique identifier for the track
+
+#### `Song.add(track_name, synth, notes, beat_position, duration=1)`
+Add an event to a specific track at a specific beat position.
+
+**Parameters:**
+- `track_name` (str): Name of the track to add to (auto-created if doesn't exist)
+- `synth` (str): Name of the synthesizer to use
+- `notes`: Note(s) to play (int/float/str or list for chords)
+- `beat_position` (float): When to start this event in beats (can be fractional like 200.5)
+- `duration` (float): Duration of the event in beats (default: 1)
+
+#### `Song.add_chord(track_name, synth, chord, beat_position, duration=1)`
+Add a chord event to a specific track at a specific beat position.
+
+**Parameters:**
+- `track_name` (str): Name of the track to add to
+- `synth` (str): Name of the synthesizer to use
+- `chord` (str): Chord notation (e.g., "C4", "Am3", "F#5")
+- `beat_position` (float): When to start this event in beats
+- `duration` (float): Duration of the event in beats (default: 1)
+
+#### `Song.play()`
+Render and play the entire song through audio output.
+
+#### `Song.export(filename="output.wav")`
+Render and export the song to a WAV file.
+
+**Parameters:**
+- `filename` (str): Output filename (default: "output.wav")
+
+#### `Song.get_duration()`
+Get the total duration of the song.
+
+**Returns:** Dictionary with `beats`, `seconds`, and `formatted` time
+
+#### `Song.list_tracks()`
+Get information about all tracks in the song.
+
+**Returns:** Dictionary with track names, event counts, and synths used
 
 ### Waveform Generators
 
@@ -356,4 +452,4 @@ Contributions are welcome! Please feel free to submit issues or pull requests on
 
 ## Credits
 
-View AUTHORS in github
+Created by liquidsound
