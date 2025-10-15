@@ -150,21 +150,25 @@ def _apply_envelope(signal, sample_rate, env):
     env_curve = np.zeros(total_len, dtype=float)
     idx = 0
     # attack
-    if attack_samples > 0:
-        env_curve[idx:idx+attack_samples] = np.linspace(0.0, 1.0, attack_samples, endpoint=False)
-        idx += attack_samples
+    if attack_samples > 0 and idx < total_len:
+        actual_attack = min(attack_samples, total_len - idx)
+        env_curve[idx:idx+actual_attack] = np.linspace(0.0, 1.0, actual_attack, endpoint=False)
+        idx += actual_attack
     # decay
-    if decay_samples > 0:
-        env_curve[idx:idx+decay_samples] = np.linspace(1.0, s, decay_samples, endpoint=False)
-        idx += decay_samples
+    if decay_samples > 0 and idx < total_len:
+        actual_decay = min(decay_samples, total_len - idx)
+        env_curve[idx:idx+actual_decay] = np.linspace(1.0, s, actual_decay, endpoint=False)
+        idx += actual_decay
     # sustain
-    if sustain_samples > 0:
-        env_curve[idx:idx+sustain_samples] = s
-        idx += sustain_samples
+    if sustain_samples > 0 and idx < total_len:
+        actual_sustain = min(sustain_samples, total_len - idx)
+        env_curve[idx:idx+actual_sustain] = s
+        idx += actual_sustain
     # release
-    if release_samples > 0:
-        env_curve[idx:idx+release_samples] = np.linspace(s, 0.0, release_samples, endpoint=False)
-        idx += release_samples
+    if release_samples > 0 and idx < total_len:
+        actual_release = min(release_samples, total_len - idx)
+        env_curve[idx:idx+actual_release] = np.linspace(s, 0.0, actual_release, endpoint=False)
+        idx += actual_release
     # if idx < total_len fill remainder with 0
     env_curve[idx:] = 0.0
     return signal * env_curve
