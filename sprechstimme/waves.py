@@ -16,4 +16,4 @@ def noise(t, freq=0, amp=1.0):
     return amp * np.random.uniform(-1.0, 1.0, size=t.shape)
 
 def pulse(t, freq=440, amp=1.0, duty=0.5):
-    return amp * np.where((t * freq) % 1 < duty, 1.0, -1.<0)
+    return amp * np.where((t * freq) % 1 < duty, 1.0, -1.0)
