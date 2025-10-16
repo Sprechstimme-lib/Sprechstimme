@@ -17,3 +17,7 @@ def noise(t, freq=0, amp=1.0):
 
 def pulse(t, freq=440, amp=1.0, duty=0.5):
     return amp * np.where((t * freq) % 1 < duty, 1.0, -1.0)
+
+def ring_mod(t, freq=440, freq2=660, amp=1.0):
+    return amp * np.sin(2 * np.pi * freq1 * t) * np.sin(2 * np.pi * freq2 * t)
+    
