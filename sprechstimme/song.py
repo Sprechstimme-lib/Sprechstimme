@@ -20,7 +20,7 @@ class Song:
         """
         self.bpm = bpm
         self.sample_rate = sample_rate
-        self.tracks = {}  # track_name -> list of (beat_position, synth, notes, duration_in_beats)
+        self.tracks = {}  # track_name -> list of (beat_position, synth, notes, duration_in_beats, vol)
         self.total_beats = 0  # automatically calculated from all events
 
     def add_track(self, track_name):
@@ -34,7 +34,7 @@ class Song:
             raise ValueError(f"Track '{track_name}' already exists")
         self.tracks[track_name] = []
 
-    def add(self, track_name, synth, notes, beat_position, duration=1):
+    def add(self, track_name, synth, notes, beat_position, duration=1, vol=5.0):
         """
         Add an event to a specific track at a specific beat position.
 
@@ -44,19 +44,20 @@ class Song:
         - notes: Note(s) to play (int/float/str or list for chords)
         - beat_position: When to start this event (in beats, can be fractional like 200.5)
         - duration: Duration of the event in beats (default: 1)
+        - vol: Dynamics from 1.0 to 10.0 (default: 5.0)
         """
         if track_name not in self.tracks:
             # Auto-create track if it doesn't exist
             self.add_track(track_name)
 
-        self.tracks[track_name].append((beat_position, synth, notes, duration))
+        self.tracks[track_name].append((beat_position, synth, notes, duration, vol))
 
         # Update total beats if this event extends the song
         end_beat = beat_position + duration
         if end_beat > self.total_beats:
             self.total_beats = end_beat
 
-    def add_chord(self, track_name, synth, chord, beat_position, duration=1):
+    def add_chord(self, track_name, synth, chord, beat_position, duration=1, vol=5.0):
         """
         Add a chord event to a specific track at a specific beat position.
 
@@ -66,11 +67,12 @@ class Song:
         - chord: Chord notation (e.g., "C4", "Am3", "F#5")
         - beat_position: When to start this event (in beats)
         - duration: Duration of the event in beats (default: 1)
+        - vol: Dynamics from 1.0 to 10.0 (default: 5.0)
         """
         notes = chord_to_notes(chord)
-        self.add(track_name, synth, notes, beat_position, duration)
+        self.add(track_name, synth, notes, beat_position, duration, vol)
 
-    def _render_event(self, synth_name, notes, sec):
+    def _render_event(self, synth_name, notes, sec, vol=5.0):
         """
         Render a single event (synth + notes) for a given duration.
 
@@ -87,6 +89,9 @@ class Song:
         # Handle different note input formats
         note_list = notes if isinstance(notes, (list, tuple)) else [notes]
 
+        # Normalize dynamics from 1-10 range to 0.1-1.0 amplitude range
+        amplitude = np.clip(float(vol), 1.0, 10.0) / 10.0
+
         for n in note_list:
             if isinstance(n, int):
                 freq = midi_to_freq(n)
@@ -97,7 +102,7 @@ class Song:
             else:
                 raise ValueError(f"Unsupported note type: {type(n)}")
 
-            out += synth["wavetype"](t, freq=freq, amp=1.0)
+            out += synth["wavetype"](t, freq=freq, amp=amplitude)
 
         # Normalize by number of notes to avoid clipping
         if len(note_list) > 0:
@@ -128,7 +133,7 @@ class Song:
         track_buffer = np.zeros(total_samples, dtype=float)
 
         # Render each event and place it at the correct position
-        for beat_pos, synth, notes, duration in track_events:
+        for beat_pos, synth, notes, duration, vol in track_events:
             # Calculate timing
             start_sec = (60.0 / self.bpm) * beat_pos
             event_sec = (60.0 / self.bpm) * duration
@@ -137,7 +142,7 @@ class Song:
             start_sample = int(start_sec * self.sample_rate)
 
             # Render the event
-            event_audio = self._render_event(synth, notes, event_sec)
+            event_audio = self._render_event(synth, notes, event_sec, vol)
             event_length = len(event_audio)
 
             # Place the event in the track buffer (with bounds checking)
@@ -226,7 +231,7 @@ class Song:
         return {
             track_name: {
                 "events": len(events),
-                "synths": list(set(synth for _, synth, _, _ in events))
+                "synths": list(set(synth for _, synth, _, _, _ in events))
             }
             for track_name, events in self.tracks.items()
         }
