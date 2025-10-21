@@ -173,14 +173,15 @@ def _apply_envelope(signal, sample_rate, env):
     env_curve[idx:] = 0.0
     return signal * env_curve
 
-def play(name, notes, duration=0.5, sample_rate=DEFAULT_SR):
+def play(name, notes, duration=0.5, sample_rate=DEFAULT_SR, vol=5.0):
     """
     Play notes on synth `name`.
     notes may be:
       - single int (MIDI) or float (Hz) or str ("C4")
       - list of notes to be treated as a chord (played together)
-      - list of tuples for sequences: [(60,0.5),(64,0.5)]
+      - list of tuples for sequences: [(60,0.5),(64,0.5)] or [(60,0.5,3.5),(64,0.5,7.2)]
     duration is seconds for each grouped event unless provided per-note in tuple form.
+    vol is dynamics from 1.0 to 10.0 (default 5.0), can be provided globally or per-note in tuple form.
     """
     # Normalize notes into a list
     if isinstance(notes, (int, float, str)):
@@ -190,20 +191,27 @@ def play(name, notes, duration=0.5, sample_rate=DEFAULT_SR):
     if synth is None:
         raise ValueError(f"Synth '{name}' not found")
 
-    # If user passed sequence of (note, dur) tuples, handle separately:
-    # detect tuple-like: first element is tuple/list of length 2 with number/str
-    if len(notes) > 0 and isinstance(notes[0], (list, tuple)) and len(notes[0]) == 2:
-        # treat as sequence of (note, dur)
+    # If user passed sequence of (note, dur) or (note, dur, vol) tuples, handle separately:
+    # detect tuple-like: first element is tuple/list of length 2 or 3 with number/str
+    if len(notes) > 0 and isinstance(notes[0], (list, tuple)) and len(notes[0]) in [2, 3]:
+        # treat as sequence of (note, dur) or (note, dur, vol)
         segments = []
-        for n, dur in notes:
-            segments.append(( [n], dur))
+        for item in notes:
+            if len(item) == 2:
+                n, dur = item
+                segments.append(( [n], dur, vol))
+            elif len(item) == 3:
+                n, dur, note_vol = item
+                segments.append(( [n], dur, note_vol))
     else:
         # Single chord or list-of-notes for same duration
-        segments = [ (notes, duration) ]
+        segments = [ (notes, duration, vol) ]
 
     out = np.array([], dtype=float)
-    for seg_notes, seg_dur in segments:
+    for seg_notes, seg_dur, seg_vol in segments:
         sec = float(seg_dur)
+        # Normalize dynamics from 1-10 range to 0.1-1.0 amplitude range
+        amplitude = np.clip(float(seg_vol), 1.0, 10.0) / 10.0
         t = np.linspace(0, sec, int(sample_rate * sec), endpoint=False)
         signal = np.zeros_like(t)
 
@@ -219,7 +227,7 @@ def play(name, notes, duration=0.5, sample_rate=DEFAULT_SR):
             else:
                 raise ValueError(f"Unsupported note type: {type(n)} -> {n}")
 
-            wave = synth["wavetype"](t, freq=freq, amp=1.0)
+            wave = synth["wavetype"](t, freq=freq, amp=amplitude)
             signal += wave
 
         # normalize chord by number of notes to avoid clipping
