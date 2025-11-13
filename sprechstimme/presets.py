@@ -172,6 +172,131 @@ _register_preset(
     poly=False
 )
 
+# Advanced synthesizer presets using new waveforms
+
+_register_preset(
+    "fm_bell",
+    wavetype=partial(waves.fm, carrier_freq=440, modulator_freq=880, mod_index=3.0),
+    filters=[partial(filters.echo, delay=0.2, decay=0.4)],
+    envelope={"attack": 0.001, "decay": 0.8, "sustain": 0.2, "release": 1.0},
+    poly=True
+)
+
+_register_preset(
+    "fm_bass",
+    wavetype=partial(waves.fm, carrier_freq=100, modulator_freq=200, mod_index=2.0),
+    filters=[partial(filters.low_pass, cutoff=500)],
+    envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.7, "release": 0.1},
+    poly=False
+)
+
+_register_preset(
+    "supersaw",
+    wavetype=partial(waves.supersaw, detune=0.15, voices=7),
+    filters=[partial(filters.ladder_filter, cutoff=2000, resonance=0.3)],
+    envelope={"attack": 0.02, "decay": 0.1, "sustain": 0.8, "release": 0.2},
+    poly=True
+)
+
+_register_preset(
+    "pwm_pad",
+    wavetype=partial(waves.pwm, lfo_freq=3, depth=0.4),
+    filters=[
+        partial(filters.low_pass, cutoff=1200),
+        partial(filters.echo, delay=0.4, decay=0.3)
+    ],
+    envelope={"attack": 0.3, "decay": 0.2, "sustain": 0.9, "release": 0.8},
+    poly=True
+)
+
+_register_preset(
+    "hard_sync_lead",
+    wavetype=partial(waves.hard_sync, freq=440, sync_freq=220),
+    filters=[partial(filters.state_variable_filter, cutoff=1500, resonance=0.5, mode='low')],
+    envelope={"attack": 0.01, "decay": 0.15, "sustain": 0.6, "release": 0.1},
+    poly=False
+)
+
+_register_preset(
+    "additive_organ",
+    wavetype=partial(waves.additive, harmonics=[1.0, 0.8, 0.6, 0.4, 0.2, 0.1]),
+    filters=[],
+    envelope={"attack": 0.01, "decay": 0.0, "sustain": 1.0, "release": 0.05},
+    poly=True
+)
+
+_register_preset(
+    "morphing_lead",
+    wavetype=partial(waves.morphing_wave, morph=0.5),
+    filters=[partial(filters.peaking, freq=1500, q=2.0, gain_db=6.0)],
+    envelope={"attack": 0.02, "decay": 0.1, "sustain": 0.7, "release": 0.15},
+    poly=False
+)
+
+_register_preset(
+    "unison_saw",
+    wavetype=partial(waves.unison, detune=0.08, voices=5, waveform='saw'),
+    filters=[partial(filters.ladder_filter, cutoff=1800, resonance=0.4)],
+    envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.8, "release": 0.15},
+    poly=True
+)
+
+_register_preset(
+    "plucked_string",
+    wavetype=partial(waves.karplus_strong, decay=0.997),
+    filters=[partial(filters.low_pass, cutoff=4000)],
+    envelope={"attack": 0.001, "decay": 0.3, "sustain": 0.5, "release": 0.2},
+    poly=True
+)
+
+_register_preset(
+    "formant_vocal",
+    wavetype=partial(waves.formant, formant_freqs=[800, 1150, 2900]),
+    filters=[partial(filters.band_pass, low=200, high=3500)],
+    envelope={"attack": 0.05, "decay": 0.1, "sustain": 0.8, "release": 0.2},
+    poly=True
+)
+
+_register_preset(
+    "pink_noise_hat",
+    wavetype=waves.pink_noise,
+    filters=[partial(filters.high_pass, cutoff=4000)],
+    envelope={"attack": 0.001, "decay": 0.03, "sustain": 0.0, "release": 0.02},
+    poly=False
+)
+
+_register_preset(
+    "brown_noise_bass",
+    wavetype=waves.brown_noise,
+    filters=[partial(filters.low_pass, cutoff=200)],
+    envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.6, "release": 0.1},
+    poly=False
+)
+
+_register_preset(
+    "ring_mod_fx",
+    wavetype=partial(waves.ring_mod, freq=440, freq2=660),
+    filters=[partial(filters.band_pass, low=300, high=3000)],
+    envelope={"attack": 0.01, "decay": 0.2, "sustain": 0.5, "release": 0.15},
+    poly=True
+)
+
+_register_preset(
+    "resonant_bass",
+    wavetype=waves.sawtooth,
+    filters=[partial(filters.state_variable_filter, cutoff=400, resonance=0.8, mode='low')],
+    envelope={"attack": 0.01, "decay": 0.1, "sustain": 0.7, "release": 0.1},
+    poly=False
+)
+
+_register_preset(
+    "moog_bass",
+    wavetype=waves.sawtooth,
+    filters=[partial(filters.ladder_filter, cutoff=600, resonance=0.7)],
+    envelope={"attack": 0.01, "decay": 0.15, "sustain": 0.6, "release": 0.1},
+    poly=False
+)
+
 
 def get_preset(name):
     """
