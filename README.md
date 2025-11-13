@@ -1,6 +1,6 @@
 # Sprechstimme
 
-A modular Python synthesizer and sequencer for creating music programmatically.
+A professional-grade modular Python synthesizer and sequencer for creating music programmatically.
 
 [![PyPI version](https://badge.fury.io/py/sprechstimme.svg)](https://badge.fury.io/py/sprechstimme)
 [![Python](https://img.shields.io/pypi/pyversions/sprechstimme.svg)](https://pypi.org/project/sprechstimme/)
@@ -8,20 +8,86 @@ A modular Python synthesizer and sequencer for creating music programmatically.
 
 ## Overview
 
-Sprechstimme is a lightweight, flexible Python library for audio synthesis and music sequencing. It provides an intuitive API for creating custom synthesizers, applying audio filters, and composing musical sequences—all with just a few lines of code.
+Sprechstimme is a professional-grade, feature-rich Python library for audio synthesis and music composition. Version 2.0 brings extensive professional features rivaling commercial synthesizers, including advanced synthesis methods, professional effects, comprehensive modulation, and powerful audio analysis tools—all with an intuitive, Pythonic API.
 
 ## Features
 
-- **Multiple Waveform Types**: Sine, square, sawtooth, triangle, and noise generators
-- **Audio Filters**: Low-pass, high-pass, band-pass, echo, and distortion effects
-- **ADSR Envelope**: Attack, Decay, Sustain, Release envelope shaping
-- **Flexible Note Input**: Support for MIDI numbers, frequencies (Hz), and note names (e.g., "C4", "A#3")
-- **Chord Support**: Built-in chord notation for major and minor triads
-- **Track Sequencing**: Create multi-note sequences with BPM-based timing
-- **Multi-Track Songs**: Compose with multiple tracks playing simultaneously, with precise beat positioning (e.g., beat 200.5)
-- **Universal Beat Counter**: Place events at any beat position across the entire song
-- **Real-time Playback**: Instant audio playback via sounddevice
-- **WAV Export**: Save your compositions to standard WAV files
+### Core Synthesis
+- **17+ Waveform Types**: Sine, square, sawtooth, triangle, pulse, noise (white/pink/brown)
+- **Advanced Synthesis**: FM synthesis, PWM, supersaw, hard sync, ring modulation, additive synthesis, formant synthesis, Karplus-Strong, wavetable synthesis
+- **Morphing Waveforms**: Smooth interpolation between different wave shapes
+- **Unison/Detune**: Multi-voice detuned oscillators for thick, wide sounds
+
+### Professional Filters
+- **Butterworth Filters**: Low-pass, high-pass, band-pass, band-stop
+- **Analog-Style Filters**: Moog ladder filter, state-variable filter (SVF)
+- **EQ Filters**: Peaking, low shelf, high shelf, notch filters
+- **Special Filters**: Allpass, comb filter
+- **Resonance Control**: Full resonance control on analog-style filters
+
+### Professional Effects
+- **Modulation Effects**: Chorus, flanger, phaser, tremolo, vibrato
+- **Time-Based Effects**: Reverb (Schroeder), delay, ping-pong delay, echo
+- **Dynamics**: Compressor, limiter
+- **Distortion**: Overdrive, hard distortion, bitcrusher
+- **All effects** with wet/dry mix and comprehensive parameter control
+
+### Modulation & Envelopes
+- **LFO**: Multiple waveforms (sine, triangle, square, saw, random), rate and depth control
+- **Advanced Envelopes**: ADSR with multiple curve types (linear, exponential, logarithmic), AR envelopes
+- **Envelope Follower**: Extract amplitude envelope from any signal
+- **Step Sequencer**: Rhythmic modulation patterns
+- **Auto-Pan**: Automatic stereo panning
+
+### Audio Utilities
+- **Mixing**: Multi-signal mixing with level control
+- **Panning**: Stereo panning with equal-power law
+- **Stereo Width**: Control stereo field width
+- **Fades**: Fade in/out with multiple curve types, crossfading
+- **Normalization**: Peak normalization, RMS measurement
+- **Time Manipulation**: Reverse, time stretch, concatenate, repeat
+- **Clipping**: Hard and soft clipping
+- **Conversions**: dB/linear, stereo/mono conversion
+
+### Wavetable Synthesis
+- **Preset Wavetables**: Sine, saw, square, triangle, pulse, harmonic series
+- **Advanced Wavetables**: PPG-style, vowel formants, Serum-style formula-based
+- **Wavetable Banks**: Smooth morphing between multiple wavetables
+- **Custom Wavetables**: Create from arrays or mathematical functions
+
+### MIDI Utilities
+- **Conversions**: MIDI ↔ frequency, MIDI ↔ note names
+- **Scales**: Generate scales (major, minor, modes, pentatonic, blues, etc.)
+- **Chords**: Generate chords (major, minor, 7ths, 9ths, sus, dim, aug, etc.)
+- **Progressions**: Random chord progression generator
+- **Melody**: Random melody generation from scales
+- **Quantization**: Grid quantization, swing timing
+- **Velocity Curves**: Linear, exponential, logarithmic
+
+### Audio Analysis
+- **Spectrum Analysis**: FFT, power spectrum, spectrogram
+- **Pitch Detection**: Autocorrelation, FFT, YIN algorithm, harmonic product spectrum
+- **Spectral Features**: Centroid, rolloff, flatness
+- **Onset Detection**: Spectral flux-based onset detection
+- **Tempo Detection**: BPM estimation
+- **Energy Analysis**: RMS, zero-crossing rate
+- **Peak Finding**: Configurable peak detection
+
+### Sequencing & Composition
+- **Track Sequencing**: BPM-based timing, per-note dynamics
+- **Multi-Track Songs**: Unlimited tracks, universal beat counter
+- **Precise Timing**: Fractional beat positioning (e.g., beat 200.5)
+- **Dynamics Control**: Per-note volume control (1-10 scale)
+- **Flexible Note Input**: MIDI numbers, frequencies, note names, chord notation
+- **Real-time Playback**: Instant audio playback
+- **WAV Export**: High-quality audio export
+
+### Presets
+- **33+ Instrument Presets**: Acoustic, electric, synthesizers, drums, and more
+- **Classic Synths**: Piano, organ, bass, leads, pads, strings, brass, bells
+- **Advanced Synths**: FM bells, supersaw, PWM pads, hard sync leads, unison saws
+- **Specialized**: Formant vocals, plucked strings, Moog bass, resonant filters
+- **Effects Presets**: Pre-configured effect chains
 
 ## Installation
 
@@ -170,6 +236,255 @@ track.addChord("pad", "G4", duration=2)   # G major, octave 4
 
 track.play()
 ```
+
+## Version 2.0 - Professional Features
+
+Sprechstimme 2.0 introduces extensive professional-grade features for advanced synthesis and production.
+
+### Advanced Synthesis
+
+```python
+import sprechstimme as sp
+
+# FM Synthesis
+sp.new("fm_bell", sp.waves.fm)
+sp.play("fm_bell", "C4", duration=2.0)
+
+# Supersaw (thick, detuned sound)
+sp.new("supersaw", sp.waves.supersaw)
+sp.play("supersaw", "A3", duration=2.0)
+
+# PWM (Pulse Width Modulation)
+sp.new("pwm", sp.waves.pwm)
+sp.play("pwm", "E3", duration=2.0)
+
+# Wavetable Synthesis
+from sprechstimme import wavetables
+
+table = wavetables.generate_harmonic_table(harmonics=[1.0, 0.5, 0.3, 0.2])
+wt = wavetables.Wavetable(table)
+# Use in synthesis...
+```
+
+### Professional Effects
+
+```python
+import sprechstimme as sp
+from sprechstimme import effects
+
+# Create a melody
+sp.new("lead", sp.waves.sawtooth)
+melody = sp.get("lead", [("C4", 0.5), ("E4", 0.5), ("G4", 0.5)])
+
+# Apply chorus
+chorus_melody = effects.chorus(melody, 44100, rate=1.5, mix=0.6)
+
+# Apply reverb
+reverb_melody = effects.reverb(melody, 44100, room_size=0.7, wet=0.4)
+
+# Apply phaser
+phaser_melody = effects.phaser(melody, 44100, rate=0.5, stages=6)
+
+# Chain effects
+processed = effects.chorus(melody, 44100)
+processed = effects.reverb(processed, 44100)
+processed = effects.compressor(processed, 44100, threshold=-15, ratio=4.0)
+
+sp.playback.play_array(processed, 44100)
+```
+
+### Professional Filters
+
+```python
+import sprechstimme as sp
+from functools import partial
+
+# Moog ladder filter (warm analog sound)
+sp.new("moog_bass", sp.waves.sawtooth,
+    filters=[partial(sp.filters.ladder_filter, cutoff=600, resonance=0.7)])
+sp.play("moog_bass", "A1", duration=2.0)
+
+# State variable filter with resonance
+sp.new("resonant", sp.waves.sawtooth,
+    filters=[partial(sp.filters.state_variable_filter, cutoff=1000, resonance=0.8, mode='low')])
+
+# Peaking EQ
+sp.new("boosted", sp.waves.sawtooth,
+    filters=[partial(sp.filters.peaking, freq=1500, q=2.0, gain_db=12)])
+```
+
+### Modulation & LFO
+
+```python
+import sprechstimme as sp
+from sprechstimme import modulation
+import numpy as np
+
+# Create LFO
+lfo = modulation.LFO(rate=5.0, waveform='sine', depth=0.8)
+
+# Generate signal
+sp.new("osc", sp.waves.sine)
+signal = sp.get("osc", "A3", duration=3.0)
+
+# Apply tremolo
+t = np.arange(len(signal)) / 44100
+modulated = modulation.tremolo(signal, t, rate=6.0, depth=0.6)
+
+# Auto-pan for stereo
+left, right = modulation.auto_pan(signal, t, rate=0.5)
+
+# Custom ADSR envelope
+env = modulation.ADSR(attack=0.1, decay=0.2, sustain=0.7, release=0.5, curve='exponential')
+envelope = env.generate(duration=2.0, sample_rate=44100)
+```
+
+### Audio Utilities
+
+```python
+import sprechstimme as sp
+from sprechstimme import utils
+
+# Mix multiple signals
+sp.new("osc1", sp.waves.sine)
+sp.new("osc2", sp.waves.triangle)
+sig1 = sp.get("osc1", "C4", duration=2.0)
+sig2 = sp.get("osc2", "E4", duration=2.0)
+
+mixed = utils.mix([sig1, sig2], levels=[0.6, 0.4])
+
+# Pan to stereo
+left, right = utils.pan(mixed, pan_position=0.7)  # Pan right
+
+# Normalize
+normalized = utils.normalize(mixed, target_level=0.9)
+
+# Fade in/out
+faded = utils.fade_in(mixed, duration=0.5, sample_rate=44100)
+faded = utils.fade_out(faded, duration=0.5, sample_rate=44100)
+
+# Apply gain in dB
+gained = utils.apply_gain(mixed, gain_db=6.0)
+```
+
+### MIDI Utilities
+
+```python
+import sprechstimme as sp
+from sprechstimme import midi_utils
+
+# Generate scales
+c_major = midi_utils.generate_scale("C4", "major", octaves=2)
+a_minor = midi_utils.generate_scale("A3", "minor", octaves=1)
+blues_scale = midi_utils.generate_scale("E3", "blues")
+
+# Generate chords
+c_major_chord = midi_utils.generate_chord("C4", "major")
+am7_chord = midi_utils.generate_chord("A3", "minor7")
+dom9_chord = midi_utils.generate_chord("G3", "dom9")
+
+# Parse chord notation
+chord = midi_utils.parse_chord_notation("Cmaj7")
+
+# Generate random progression
+progression = midi_utils.random_chord_progression("C4", length=4)
+
+# Convert between formats
+freq = midi_utils.midi_to_freq(60)  # 261.63 Hz (middle C)
+midi_num = midi_utils.note_to_midi("A4")  # 69
+note_name = midi_utils.midi_to_note(69)  # "A4"
+```
+
+### Audio Analysis
+
+```python
+import sprechstimme as sp
+from sprechstimme import analysis
+
+# Create test signal
+sp.new("test", sp.waves.sine)
+signal = sp.get("test", 440, duration=1.0)  # A4
+
+# Pitch detection
+pitch = analysis.detect_pitch_autocorrelation(signal, 44100)
+print(f"Detected pitch: {pitch:.2f} Hz")
+
+# Spectrum analysis
+freqs, mags = analysis.fft_spectrum(signal, 44100)
+centroid = analysis.spectral_centroid(signal, 44100)
+rolloff = analysis.spectral_rolloff(signal, 44100)
+
+# Onset detection
+onsets = analysis.detect_onsets(signal, 44100)
+print(f"Onset times: {onsets}")
+
+# Tempo detection
+tempo = analysis.detect_tempo(signal, 44100)
+print(f"Detected tempo: {tempo} BPM")
+
+# Spectrogram
+times, freqs, spec = analysis.spectrogram(signal, 44100, window_size=2048)
+```
+
+### Using New Presets
+
+```python
+import sprechstimme as sp
+
+# Advanced synthesis presets
+sp.new("fm_bell", preset="fm_bell")
+sp.new("supersaw", preset="supersaw")
+sp.new("pwm_pad", preset="pwm_pad")
+sp.new("hard_sync", preset="hard_sync_lead")
+sp.new("unison", preset="unison_saw")
+
+# Specialized presets
+sp.new("moog", preset="moog_bass")
+sp.new("resonant", preset="resonant_bass")
+sp.new("vocal", preset="formant_vocal")
+sp.new("pluck", preset="plucked_string")
+
+# Use them
+sp.play("supersaw", "C3", duration=2.0)
+sp.play("vocal", ["C4", "E4", "G4"], duration=1.5)
+
+# List all available presets
+print(sp.presets.list_presets())
+```
+
+### Complete Production Example
+
+```python
+import sprechstimme as sp
+from sprechstimme import effects, utils
+
+# Create song
+song = sp.Song(bpm=120)
+
+# Add instruments
+sp.new("bass", preset="moog_bass")
+sp.new("lead", preset="supersaw")
+sp.new("pad", preset="pwm_pad")
+
+# Compose
+song.add("bass", "C2", beat=0, duration=1, vol=7)
+song.add("lead", "C4", beat=1, duration=0.5, vol=6)
+song.add("pad", "C4", beat=0, duration=4, vol=4)  # Chord
+
+# Render
+audio = song.render()
+
+# Apply mastering effects
+audio = effects.chorus(audio, 44100, mix=0.3)
+audio = effects.reverb(audio, 44100, room_size=0.5, wet=0.25)
+audio = effects.compressor(audio, 44100, threshold=-15, ratio=4.0)
+audio = utils.normalize(audio, target_level=0.95)
+
+# Export
+sp.playback.export_wav(audio, "master.wav", 44100)
+```
+
+For more examples, see `examples/advanced_features.py` in the repository.
 
 ## API Reference
 
